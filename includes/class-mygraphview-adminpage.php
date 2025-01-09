@@ -12,7 +12,6 @@ class MyGraphView_AdminPage
     {
 ?>
         <div class="wrap">
-            <h1><?php esc_html_e('Site Graph View', 'my-graph-view'); ?></h1>
             <div id="mygraphview-admin-root"></div>
         </div>
     <?php

@@ -57,8 +57,9 @@ function FilterBar({
         marginTop: '20px',
         backgroundColor: 'white',
         border: '1px solid #ccc',
-        borderRadius: '4px',
-        width: '100%'
+        //borderRadius: '4px',
+        //width: '100%'
+
     };
 
     const filterLayoutStyle = {
@@ -598,35 +599,95 @@ function AdminApp() {
         maxSimulationTime: 4000
     }), []); // Remove dependency on elements.length
 
-    // Add effect to handle layout updates
+    // Add state for container height
+    const [containerHeight, setContainerHeight] = useState(800);
+
+    // Calculate and update container height
+    useEffect(() => {
+        function updateHeight() {
+            const MIN_HEIGHT = 400; // Minimum height in pixels
+            const PADDING = 40; // Total vertical padding (20px top + 20px bottom)
+            const OPTIONS_HEIGHT = 200; // Approximate height for options section
+
+            // Calculate available height
+            const viewportHeight = window.innerHeight;
+            const availableHeight = viewportHeight - PADDING - OPTIONS_HEIGHT;
+
+            // Set height respecting minimum
+            setContainerHeight(Math.max(availableHeight, MIN_HEIGHT));
+        }
+
+        // Initial calculation
+        updateHeight();
+
+        // Update on window resize
+        window.addEventListener('resize', updateHeight);
+        return () => window.removeEventListener('resize', updateHeight);
+    }, []);
+
+    // Update container style to use dynamic height
+    const containerStyle = {
+        width: '100%',
+        height: `${containerHeight}px`,
+        border: '1px solid #ccc',
+        position: 'relative',
+        backgroundColor: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'height 0.2s ease-in-out', // Smooth height transitions
+    };
+
+    const graphContainerStyle = {
+        flex: 1,
+        position: 'relative',
+        minHeight: 0,
+    };
+
+    const loadingOverlayStyle = {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+    };
+
+    const loadingTextStyle = {
+        marginTop: '20px',
+        color: '#1d2327',
+        fontSize: '16px',
+        fontWeight: 500
+    };
+
+    // Update the layout effect to rerun when container height changes
     useEffect(() => {
         if (cyInstance && elements.length > 0) {
             cyInstance.layout(layout).run();
         }
-    }, [elements, cyInstance]);
+    }, [elements, cyInstance, containerHeight]);
 
-    // Add effect for initial zoom fitting
+    // Update the zoom fitting effect to rerun when container height changes
     useEffect(() => {
         if (!cyInstance || loading) return;
 
-        // Wait for layout to complete
         const timer = setTimeout(() => {
-            // Get the graph bounds with padding
             const padding = 50;
             cyInstance.fit({
                 padding: padding,
                 eles: cyInstance.elements(),
             });
 
-            // Calculate zoom to fill container while maintaining aspect ratio
             const graphBounds = cyInstance.elements().boundingBox();
             const containerWidth = cyInstance.width();
             const containerHeight = cyInstance.height();
 
             const widthRatio = (containerWidth - 2 * padding) / graphBounds.w;
             const heightRatio = (containerHeight - 2 * padding) / graphBounds.h;
-
-            // Use the smaller ratio to ensure graph fits in both dimensions
             const zoomFactor = Math.min(widthRatio, heightRatio);
 
             cyInstance.zoom({
@@ -636,10 +697,10 @@ function AdminApp() {
                     y: containerHeight / 2
                 }
             });
-        }, 100); // Wait for layout to settle
+        }, 100);
 
         return () => clearTimeout(timer);
-    }, [cyInstance, loading]);
+    }, [cyInstance, loading, containerHeight]);
 
     // Memoize event handlers
     const handleNodeHover = useCallback((node) => {
@@ -726,43 +787,6 @@ function AdminApp() {
         });
     }, [cyInstance]);
 
-    const containerStyle = {
-        width: '100%',
-        height: '800px',
-        border: '1px solid #ccc',
-        position: 'relative',
-        backgroundColor: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-    };
-
-    const graphContainerStyle = {
-        flex: 1,
-        position: 'relative',
-        minHeight: 0,
-    };
-
-    const loadingOverlayStyle = {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-    };
-
-    const loadingTextStyle = {
-        marginTop: '20px',
-        color: '#1d2327',
-        fontSize: '16px',
-        fontWeight: 500
-    };
-
     if (error) {
         return (
             <div style={containerStyle}>
@@ -776,43 +800,20 @@ function AdminApp() {
     }
 
     return (
-        <div style={{ padding: '20px' }}>
-            <div style={containerStyle}>
-                <div style={graphContainerStyle}>
-                    {loading ? (
-                        <div style={loadingOverlayStyle}>
-                            <span className="spinner is-active" style={{ float: 'none' }}></span>
-                            <div style={loadingTextStyle}>Loading Graph Data</div>
-                        </div>
-                    ) : (
-                        <>
-                            <ResetViewButton onClick={handleResetView} />
-                            <HoverInfo data={hoverData} type={hoverType} />
-                            <CytoscapeComponent
-                                elements={elements}
-                                stylesheet={stylesheet}
-                                layout={layout}
-                                style={{ width: '100%', height: '100%' }}
-                                cy={(cy) => {
-                                    setCyInstance(cy);
-                                }}
-                            />
-                        </>
-                    )}
-                </div>
-            </div>
+        <div>
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '15px',
-                marginTop: '20px',
-                marginBottom: '15px'
+                marginBottom: '15px',
+                marginTop: '20px'
+
             }}>
                 <h2 style={{
                     fontSize: '1.3em',
                     color: '#1d2327',
                     fontWeight: 'normal',
-                    margin: 0
+                    margin: 0,
                 }}>Graph Options</h2>
                 <button
                     onClick={handleResetOptions}
@@ -841,6 +842,30 @@ function AdminApp() {
                 availablePostTypes={availablePostTypes}
                 availableTaxonomies={availableTaxonomies}
             />
+            <div style={{ ...containerStyle, marginTop: '20px' }}>
+                <div style={graphContainerStyle}>
+                    {loading ? (
+                        <div style={loadingOverlayStyle}>
+                            <span className="spinner is-active" style={{ float: 'none' }}></span>
+                            <div style={loadingTextStyle}>Loading Graph Data</div>
+                        </div>
+                    ) : (
+                        <>
+                            <ResetViewButton onClick={handleResetView} />
+                            <HoverInfo data={hoverData} type={hoverType} />
+                            <CytoscapeComponent
+                                elements={elements}
+                                stylesheet={stylesheet}
+                                layout={layout}
+                                style={{ width: '100%', height: '100%' }}
+                                cy={(cy) => {
+                                    setCyInstance(cy);
+                                }}
+                            />
+                        </>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
