@@ -5,6 +5,17 @@ import CytoscapeComponent from 'react-cytoscapejs';
 function HoverInfo({ data, type }) {
     if (!data) return null;
 
+    // Get theme colors with fallbacks
+    const { themeColors } = window.myGraphViewAdminData || {};
+    const primaryColor = themeColors?.primary || '#2271b1'; // WP Admin blue
+
+    // Function to decode HTML entities
+    const decodeHTML = (html) => {
+        const txt = document.createElement('textarea');
+        txt.innerHTML = html;
+        return txt.value;
+    };
+
     const style = {
         position: 'absolute',
         top: '20px',
@@ -18,14 +29,21 @@ function HoverInfo({ data, type }) {
         zIndex: 1000,
     };
 
+    const clickInstructionStyle = {
+        marginTop: '10px',
+        fontSize: '12px',
+        color: '#666',
+        fontStyle: 'italic'
+    };
+
     if (type === 'node') {
         const { label, excerpt, taxonomies, id } = data;
         return (
             <div style={style}>
-                <h3 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>{label}</h3>
+                <h3 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>{decodeHTML(label)}</h3>
                 {excerpt && (
                     <p style={{ margin: '0 0 10px 0', fontSize: '14px' }}>
-                        {excerpt.length > 150 ? excerpt.substring(0, 150) + '...' : excerpt}
+                        {excerpt.length > 150 ? decodeHTML(excerpt).substring(0, 150) + '...' : decodeHTML(excerpt)}
                     </p>
                 )}
                 {taxonomies && Array.isArray(taxonomies) && taxonomies.length > 0 && (
@@ -37,22 +55,9 @@ function HoverInfo({ data, type }) {
                         ))}
                     </div>
                 )}
-                <a
-                    href={`/wp-admin/post.php?post=${id}&action=edit`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                        display: 'inline-block',
-                        padding: '5px 10px',
-                        backgroundColor: '#2271b1',
-                        color: 'white',
-                        textDecoration: 'none',
-                        borderRadius: '3px',
-                        fontSize: '12px'
-                    }}
-                >
-                    Edit Post
-                </a>
+                <div style={clickInstructionStyle}>
+                    Click node to open post in new tab
+                </div>
             </div>
         );
     }
@@ -102,77 +107,86 @@ function AdminApp() {
     const { restUrl, nonce, themeColors } = window.myGraphViewAdminData || {};
 
     // Memoize the stylesheet
-    const stylesheet = useMemo(() => [
-        {
-            selector: 'node',
-            style: {
-                label: 'data(label)',
-                'background-color': themeColors?.secondary || '#444444',
-                color: '#000000',
-                'text-valign': 'bottom',
-                'text-halign': 'center',
-                'font-size': '10px',
-                'text-margin-y': '10px',
-                'z-index': 1,
+    const stylesheet = useMemo(() => {
+        // Get primary color with fallbacks:
+        // 1. Theme color from theme.json
+        // 2. WordPress admin primary color
+        // 3. Default fallback
+        const primaryColor = themeColors?.primary || '#2271b1'; // WP Admin blue
+        const secondaryColor = themeColors?.secondary || '#1d2327'; // WP Admin dark gray
+
+        return [
+            {
+                selector: 'node',
+                style: {
+                    label: 'data(label)',
+                    'background-color': secondaryColor,
+                    color: '#000000',
+                    'text-valign': 'bottom',
+                    'text-halign': 'center',
+                    'font-size': '10px',
+                    'text-margin-y': '10px',
+                    'z-index': 1,
+                },
             },
-        },
-        {
-            selector: 'edge',
-            style: {
-                width: 1,
-                'line-color': '#e0e0e0',
-                'target-arrow-shape': 'triangle',
-                'target-arrow-color': '#e0e0e0',
-                'curve-style': 'bezier',
-                opacity: 0.8,
-                'z-index': 0,
+            {
+                selector: 'edge',
+                style: {
+                    width: 1,
+                    'line-color': '#e0e0e0',
+                    'target-arrow-shape': 'triangle',
+                    'target-arrow-color': '#e0e0e0',
+                    'curve-style': 'bezier',
+                    opacity: 0.8,
+                    'z-index': 0,
+                },
             },
-        },
-        {
-            selector: 'node.hover',
-            style: {
-                'background-color': themeColors?.primary || '#9370DB',
-                'z-index': 10,
+            {
+                selector: 'node.hover',
+                style: {
+                    'background-color': primaryColor,
+                    'z-index': 10,
+                },
             },
-        },
-        {
-            selector: 'node.faded',
-            style: {
-                opacity: 0.5,
-                'z-index': 0,
+            {
+                selector: 'node.faded',
+                style: {
+                    opacity: 0.5,
+                    'z-index': 0,
+                },
             },
-        },
-        {
-            selector: 'edge.highlighted',
-            style: {
-                'line-color': themeColors?.primary || '#9370DB',
-                'target-arrow-color': themeColors?.primary || '#9370DB',
-                opacity: 1,
-                width: 2,
-                'z-index': 9,
+            {
+                selector: 'edge.highlighted',
+                style: {
+                    'line-color': primaryColor,
+                    'target-arrow-color': primaryColor,
+                    opacity: 1,
+                    width: 2,
+                    'z-index': 9,
+                },
             },
-        },
-        {
-            selector: 'edge.faded',
-            style: {
-                'z-index': 0,
-                opacity: 0.2,
+            {
+                selector: 'edge.faded',
+                style: {
+                    'z-index': 0,
+                    opacity: 0.2,
+                },
             },
-        },
-        {
-            selector: 'node.highlighted',
-            style: {
-                'z-index': 8,
-                opacity: 1,
+            {
+                selector: 'node.highlighted',
+                style: {
+                    'z-index': 8,
+                    opacity: 1,
+                },
             },
-        },
-    ], [themeColors]);
+        ];
+    }, [themeColors]);
 
     // Memoize the layout config
     const layout = useMemo(() => ({
         name: 'cose',
         animate: true,
-        padding: 100,
+        padding: 50,
         nodeRepulsion: function (node) { return 20000; },
         nodeOverlap: 40,
         idealEdgeLength: function (edge) { return 100; },
@@ -194,6 +208,42 @@ function AdminApp() {
             console.log('Initial layout complete');
         }
     }), []);
+
+    // Add effect for initial zoom fitting
+    useEffect(() => {
+        if (!cyInstance || loading) return;
+
+        // Wait for layout to complete
+        const timer = setTimeout(() => {
+            // Get the graph bounds with padding
+            const padding = 50;
+            cyInstance.fit({
+                padding: padding,
+                eles: cyInstance.elements(),
+            });
+
+            // Calculate zoom to fill container while maintaining aspect ratio
+            const graphBounds = cyInstance.elements().boundingBox();
+            const containerWidth = cyInstance.width();
+            const containerHeight = cyInstance.height();
+
+            const widthRatio = (containerWidth - 2 * padding) / graphBounds.w;
+            const heightRatio = (containerHeight - 2 * padding) / graphBounds.h;
+
+            // Use the smaller ratio to ensure graph fits in both dimensions
+            const zoomFactor = Math.min(widthRatio, heightRatio);
+
+            cyInstance.zoom({
+                level: zoomFactor,
+                renderedPosition: {
+                    x: containerWidth / 2,
+                    y: containerHeight / 2
+                }
+            });
+        }, 100); // Wait for layout to settle
+
+        return () => clearTimeout(timer);
+    }, [cyInstance, loading]);
 
     // Memoize event handlers
     const handleNodeHover = useCallback((node) => {
