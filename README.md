@@ -2,6 +2,8 @@
 
 **Graph View** is a React-based WordPress plugin that visualizes your site's content as interactive graphs using Cytoscape.js. Inspired by tools like Obsidian, it provides a dynamic way to explore relationships between posts, pages, taxonomies, and internal links both in the admin dashboard and on the frontend.
 
+> ⚠️ **Warning**: This plugin is currently in early development and is **NOT** ready for production use. It is being actively developed and may contain bugs, security issues, or incomplete features. Use at your own risk in development/testing environments only.
+
 ## Features
 
 - **Interactive Graph Visualization**: Visualize your WordPress content relationships in a dynamic graph interface.
