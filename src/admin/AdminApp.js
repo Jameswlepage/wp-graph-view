@@ -22,12 +22,7 @@ function ResetViewButton({ onClick }) {
         justifyContent: 'center',
         zIndex: 10,
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    };
-
-    const iconStyle = {
-        width: '20px',
-        height: '20px',
-        display: 'block',
+        fontSize: '16px'
     };
 
     return (
@@ -36,7 +31,7 @@ function ResetViewButton({ onClick }) {
             onClick={onClick}
             title="Reset View"
         >
-            <Icon icon={rotateLeft} size={20} style={iconStyle} />
+            🔄
         </button>
     );
 }
