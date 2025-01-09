@@ -2,240 +2,147 @@
 
 /**
  * Plugin Name:       My Graph View
- * Description:       Visualize your WordPress content in an Obsidian-like graph using Cytoscape.js.
- * Version:           1.1.0
+ * Description:       Visualize your WordPress content in a React-based Cytoscape.js graph.
+ * Version:           2.0.0
  * Author:            Your Name
  * License:           GPL-2.0-or-later
  */
 
-if (! defined('ABSPATH')) {
-    exit; // Exit if accessed directly
+if (!defined('ABSPATH')) {
+    exit;
 }
 
-// Require plugin classes
-require_once plugin_dir_path(__FILE__) . 'includes/class-mygraphview-databuilder.php';
-require_once plugin_dir_path(__FILE__) . 'includes/class-mygraphview-rest.php';
-require_once plugin_dir_path(__FILE__) . 'includes/class-mygraphview-adminpage.php';
-
+define('MYGRAPHVIEW_VERSION', '2.0.0');
 define('MYGRAPHVIEW_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('MYGRAPHVIEW_VERSION', '1.1.0');
+define('MYGRAPHVIEW_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
-// Default setting for auto-inserting the mini graph
+// Include core classes
+require_once MYGRAPHVIEW_PLUGIN_DIR . 'includes/class-mygraphview-databuilder.php';
+require_once MYGRAPHVIEW_PLUGIN_DIR . 'includes/class-mygraphview-rest.php';
+require_once MYGRAPHVIEW_PLUGIN_DIR . 'includes/class-mygraphview-adminpage.php';
+
+// Set default options on activation
 register_activation_hook(__FILE__, 'mygraphview_set_default_options');
 function mygraphview_set_default_options()
 {
-    if (! get_option('mygraphview_auto_insert')) {
-        // 'yes' or 'no'
+    if (!get_option('mygraphview_auto_insert')) {
         update_option('mygraphview_auto_insert', 'yes');
     }
 }
 
 /**
- * Initialize plugin
+ * Initialize the plugin
  */
 function mygraphview_init_plugin()
 {
-    // Register REST routes on rest_api_init
+    // Register REST routes
     add_action('rest_api_init', array('MyGraphView_REST', 'register_routes'));
 
-    // Enqueue scripts for front-end
-    add_action('wp_enqueue_scripts', 'mygraphview_enqueue_front_end_scripts');
-
-    // Enqueue scripts for admin
+    // Enqueue our built React scripts in admin
     add_action('admin_enqueue_scripts', 'mygraphview_enqueue_admin_scripts');
 
-    // Add admin page
+    // Enqueue our built React scripts on the front end
+    add_action('wp_enqueue_scripts', 'mygraphview_enqueue_frontend_scripts');
+
+    // Add admin menu
     add_action('admin_menu', 'mygraphview_register_admin_page');
 }
 add_action('plugins_loaded', 'mygraphview_init_plugin');
 
 /**
- * Enqueue front-end scripts
+ * Enqueue the admin bundle
  */
-function mygraphview_enqueue_front_end_scripts()
+function mygraphview_enqueue_admin_scripts()
 {
-    // Only load if "auto-insert" setting is enabled and we’re on single post/page
-    $auto_insert = get_option('mygraphview_auto_insert', 'yes');
-    if (($auto_insert === 'yes') && (is_single() || is_page())) {
+    $screen = get_current_screen();
+    if (!isset($screen->id)) {
+        return;
+    }
+
+    // Only load on our plugin's admin page
+    if ($screen->id === 'toplevel_page_graphview') {
+        // Enqueue the compiled React admin script
         wp_enqueue_script(
-            'cytoscape',
-            'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js',
-            array(),
-            '3.30.4',
-            false  // Load in header
-        );
-        wp_enqueue_script(
-            'dagre',
-            'https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js',
-            array(),
-            '0.8.5',
-            false  // Load in header
-        );
-        wp_enqueue_script(
-            'cytoscape-dagre',
-            'https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js',
-            array('cytoscape', 'dagre'),
-            '2.5.0',
-            false  // Load in header
-        );
-        wp_enqueue_script(
-            'layout-base',
-            'https://cdn.jsdelivr.net/npm/layout-base@2.0.1/layout-base.min.js',
-            array(),
-            '2.0.1',
-            false  // Load in header
-        );
-        wp_enqueue_script(
-            'cytoscape-cose-bilkent',
-            'https://cdn.jsdelivr.net/npm/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.min.js',
-            array('cytoscape', 'layout-base'),
-            '4.1.0',
-            false  // Load in header
-        );
-        wp_enqueue_script(
-            'mygraphview-frontend',
-            plugins_url('public/graph-view.js', __FILE__),
-            array('cytoscape', 'cytoscape-cose-bilkent', 'cytoscape-dagre', 'jquery'),
+            'mygraphview-admin-bundle',
+            MYGRAPHVIEW_PLUGIN_URL . 'build/admin.js',
+            array('wp-element'), // or empty array if not using WP's React
             MYGRAPHVIEW_VERSION,
-            true   // Load in footer
+            true
         );
 
-        // Pass the post ID and REST URL to the script
-        wp_localize_script('mygraphview-frontend', 'myGraphViewData', array(
+        // Provide REST URL, nonce, settings, etc. to the script
+        wp_localize_script('mygraphview-admin-bundle', 'myGraphViewAdminData', array(
             'restUrl'        => esc_url_raw(rest_url('mygraphview/v1')),
-            'currentPostId'  => get_the_ID() ? get_the_ID() : 0,
-            'themeColors'    => mygraphview_get_theme_colors()
+            'nonce'          => wp_create_nonce('wp_rest'),
+            'themeColors'    => mygraphview_get_theme_colors(),
         ));
     }
 }
 
 /**
- * Get theme colors with fallbacks
+ * Enqueue the frontend bundle
  */
-function mygraphview_get_theme_colors()
+function mygraphview_enqueue_frontend_scripts()
 {
-    $colors = array(
-        'primary' => '#9370DB',     // Default purple
-        'secondary' => '#444444',   // Default dark grey
-        'tertiary' => '#cccccc',    // Default light grey
-    );
-
-    // Try to get theme.json colors
-    $global_settings = wp_get_global_settings();
-    $color_palette = $global_settings['color']['palette'] ?? [];
-
-    if (!empty($color_palette)) {
-        // Look for specific colors by slug patterns
-        foreach ($color_palette as $color) {
-            // Skip if color doesn't have required keys
-            if (!isset($color['slug']) || !isset($color['color'])) {
-                continue;
-            }
-
-            $slug = $color['slug'];
-            // Primary color (for hover and highlights)
-            if (strpos($slug, 'primary') !== false || strpos($slug, 'main') !== false) {
-                $colors['primary'] = $color['color'];
-            }
-            // Secondary color (for nodes)
-            elseif (strpos($slug, 'secondary') !== false || strpos($slug, 'contrast') !== false) {
-                $colors['secondary'] = $color['color'];
-            }
-            // Tertiary color (for edges)
-            elseif (strpos($slug, 'tertiary') !== false || strpos($slug, 'muted') !== false) {
-                $colors['tertiary'] = $color['color'];
-            }
-        }
-
-        // If we didn't find specific matches, use the first few colors
-        if ($colors['primary'] === '#9370DB' && !empty($color_palette[0])) {
-            $colors['primary'] = $color_palette[0]['color'];
-        }
-        if ($colors['secondary'] === '#444444' && !empty($color_palette[1])) {
-            $colors['secondary'] = $color_palette[1]['color'];
-        }
-        if ($colors['tertiary'] === '#cccccc' && !empty($color_palette[2])) {
-            $colors['tertiary'] = $color_palette[2]['color'];
-        }
-    }
-
-    return $colors;
-}
-
-/**
- * Enqueue admin scripts
- */
-function mygraphview_enqueue_admin_scripts()
-{
-    $screen = get_current_screen();
-    if (isset($screen->id) && $screen->id === 'toplevel_page_mygraphview-admin') {
-        // Cytoscape
+    $auto_insert = get_option('mygraphview_auto_insert', 'yes');
+    if (($auto_insert === 'yes') && (is_single() || is_page())) {
+        // Enqueue the compiled React front-end script
         wp_enqueue_script(
-            'cytoscape',
-            'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js',
+            'mygraphview-frontend-bundle',
+            MYGRAPHVIEW_PLUGIN_URL . 'build/frontend.js',
             array(),
-            '3.30.4',
-            false
-        );
-        wp_enqueue_script(
-            'dagre',
-            'https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js',
-            array(),
-            '0.8.5',
-            false
-        );
-        wp_enqueue_script(
-            'cytoscape-dagre',
-            'https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js',
-            array('cytoscape', 'dagre'),
-            '2.5.0',
-            false
-        );
-        wp_enqueue_script(
-            'layout-base',
-            'https://cdn.jsdelivr.net/npm/layout-base@2.0.1/layout-base.min.js',
-            array(),
-            '2.0.1',
-            false
-        );
-        wp_enqueue_script(
-            'cytoscape-cose-bilkent',
-            'https://cdn.jsdelivr.net/npm/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.min.js',
-            array('cytoscape', 'layout-base'),
-            '4.1.0',
-            false
-        );
-
-        // Admin script
-        wp_enqueue_script(
-            'mygraphview-admin',
-            plugins_url('admin/admin.js', __FILE__),
-            array('jquery', 'cytoscape', 'cytoscape-cose-bilkent', 'cytoscape-dagre'),
             MYGRAPHVIEW_VERSION,
             true
         );
 
         // Pass data
-        wp_localize_script('mygraphview-admin', 'myGraphViewAdminData', array(
-            'restUrl' => esc_url_raw(rest_url('mygraphview/v1')),
-            'nonce'   => wp_create_nonce('wp_rest'),
-            'themeColors' => mygraphview_get_theme_colors()
+        wp_localize_script('mygraphview-frontend-bundle', 'myGraphViewData', array(
+            'restUrl'       => esc_url_raw(rest_url('mygraphview/v1')),
+            'currentPostId' => get_the_ID() ? get_the_ID() : 0,
+            'themeColors'   => mygraphview_get_theme_colors(),
         ));
     }
 }
 
 /**
- * Register Admin Page
+ * Basic function to pull theme colors
+ */
+function mygraphview_get_theme_colors()
+{
+    // Fallback color set; adjust as desired
+    $colors = array(
+        'primary'   => '#9370DB',
+        'secondary' => '#444444',
+        'tertiary'  => '#cccccc',
+    );
+
+    // If you want to read from theme.json or global settings, do so here...
+    // For brevity, we just return the fallback array
+
+    return $colors;
+}
+
+/**
+ * Register the Admin Menu
  */
 function mygraphview_register_admin_page()
 {
     add_menu_page(
-        __('My Graph View', 'my-graph-view'),
-        __('My Graph View', 'my-graph-view'),
+        __('Graph View', 'my-graph-view'),
+        __('Graph View', 'my-graph-view'),
         'manage_options',
-        'mygraphview-admin',
-        array('MyGraphView_AdminPage', 'render'),
+        'graphview',
+        array('MyGraphView_AdminPage', 'render_graph'),
         'dashicons-networking',
         90
+    );
+
+    add_submenu_page(
+        'graphview',
+        __('Graph Settings', 'my-graph-view'),
+        __('Settings', 'my-graph-view'),
+        'manage_options',
+        'graphview-settings',
+        array('MyGraphView_AdminPage', 'render_settings')
     );
 }

@@ -1,0 +1,25 @@
+{
+    "name": "my-graph-view",
+    "version": "2.0.0",
+    "description": "A React-based WordPress plugin for Cytoscape.js graph visualization.",
+    "scripts": {
+        "build": "NODE_ENV=production webpack",
+        "dev": "webpack --watch",
+        "bundle": "npm run build && zip -r my-graph-view.zip build/* readme.txt my-graph-view.php"
+    },
+    "dependencies": {
+        "cytoscape": "^3.30.4",
+        "cytoscape-cola": "^2.5.1",
+        "react": "^18.2.0",
+        "react-cytoscapejs": "^2.0.0",
+        "react-dom": "^18.2.0"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.20.0",
+        "@babel/preset-env": "^7.20.0",
+        "@babel/preset-react": "^7.18.6",
+        "babel-loader": "^9.1.0",
+        "webpack": "^5.75.0",
+        "webpack-cli": "^5.0.1"
+    }
+}

@@ -1,16 +1,27 @@
 <?php
-if (! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
 class MyGraphView_AdminPage
 {
+    /**
+     * Renders the main React container for the admin graph
+     */
+    public static function render_graph()
+    {
+?>
+        <div class="wrap">
+            <h1><?php esc_html_e('Site Graph View', 'my-graph-view'); ?></h1>
+            <div id="mygraphview-admin-root"></div>
+        </div>
+    <?php
+    }
 
     /**
-     * Render the admin page for the global graph,
-     * plus a simple settings form for auto-insertion toggle.
+     * Renders a simple settings page for “auto-insert” option
      */
-    public static function render()
+    public static function render_settings()
     {
         // Handle form submission
         if (
@@ -18,7 +29,6 @@ class MyGraphView_AdminPage
             check_admin_referer('mygraphview_settings_form') &&
             current_user_can('manage_options')
         ) {
-            // Update auto-insert setting
             $auto_insert = (isset($_POST['mygraphview_auto_insert']) && $_POST['mygraphview_auto_insert'] === 'yes')
                 ? 'yes'
                 : 'no';
@@ -28,18 +38,9 @@ class MyGraphView_AdminPage
         }
 
         $current_setting = get_option('mygraphview_auto_insert', 'yes');
-?>
+    ?>
         <div class="wrap">
-            <h1><?php esc_html_e('Site Graph View', 'my-graph-view'); ?></h1>
-
-            <p>
-                <?php esc_html_e('Below is an interactive graph of your site content, powered by Cytoscape.js.', 'my-graph-view'); ?>
-            </p>
-
-            <div id="mygraphview-admin-graph" style="width:100%; height: 800px; border:1px solid #ccc; margin-bottom: 2em;"></div>
-
-            <!-- Settings Form -->
-            <h2><?php esc_html_e('Graph Settings', 'my-graph-view'); ?></h2>
+            <h1><?php esc_html_e('Graph Settings', 'my-graph-view'); ?></h1>
             <form method="post">
                 <?php wp_nonce_field('mygraphview_settings_form'); ?>
                 <input type="hidden" name="mygraphview_settings_submitted" value="1" />

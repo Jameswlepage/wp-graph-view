@@ -1,0 +1,4 @@
+/node_modules
+/build
+/my-graph-view.zip
+pnpm-lock.yaml
