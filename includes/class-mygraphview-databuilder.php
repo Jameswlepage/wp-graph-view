@@ -61,7 +61,9 @@ class MyGraphView_DataBuilder
                         'id'           => 'parent-' . $pid . '-' . $p->post_parent,
                         'source'       => (string) $pid,
                         'target'       => (string) $p->post_parent,
-                        'relationship' => 'parent'
+                        'relationship' => 'parent',
+                        'source_title' => get_the_title($pid),
+                        'target_title' => get_the_title($p->post_parent)
                     )
                 );
             }
@@ -78,7 +80,9 @@ class MyGraphView_DataBuilder
                         'id'           => 'child-' . $pid . '-' . $child->ID,
                         'source'       => (string) $pid,
                         'target'       => (string) $child->ID,
-                        'relationship' => 'child'
+                        'relationship' => 'child',
+                        'source_title' => get_the_title($pid),
+                        'target_title' => get_the_title($child->ID)
                     )
                 );
             }
@@ -94,7 +98,9 @@ class MyGraphView_DataBuilder
                                 'id'           => 'link-' . $pid . '-' . $linked_post_id . '-' . wp_rand(),
                                 'source'       => (string) $pid,
                                 'target'       => (string) $linked_post_id,
-                                'relationship' => 'internal_link'
+                                'relationship' => 'internal_link',
+                                'source_title' => get_the_title($pid),
+                                'target_title' => get_the_title($linked_post_id)
                             )
                         );
                     }
@@ -113,12 +119,31 @@ class MyGraphView_DataBuilder
 
                 $shared = array_intersect($post_terms_map[$pid1], $post_terms_map[$pid2]);
                 if (!empty($shared)) {
+                    // Get the shared taxonomy terms
+                    $shared_terms = array();
+                    $taxonomies = get_object_taxonomies($p1->post_type);
+                    foreach ($taxonomies as $taxonomy) {
+                        $terms1 = wp_get_post_terms($pid1, $taxonomy, array('fields' => 'names'));
+                        $terms2 = wp_get_post_terms($pid2, $taxonomy, array('fields' => 'names'));
+                        $shared_term_names = array_intersect($terms1, $terms2);
+                        if (!empty($shared_term_names)) {
+                            $shared_terms = array(
+                                'taxonomy' => get_taxonomy($taxonomy)->labels->singular_name,
+                                'terms' => array_values($shared_term_names)
+                            );
+                            break; // Use the first shared taxonomy found
+                        }
+                    }
+
                     $edges[] = array(
                         'data' => array(
                             'id'           => 'shared-tax-' . $pid1 . '-' . $pid2,
                             'source'       => (string) $pid1,
                             'target'       => (string) $pid2,
-                            'relationship' => 'shared_taxonomy'
+                            'relationship' => 'shared_taxonomy',
+                            'source_title' => get_the_title($pid1),
+                            'target_title' => get_the_title($pid2),
+                            'shared_terms' => $shared_terms
                         )
                     );
                 }
