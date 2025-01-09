@@ -14,14 +14,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('graphview_VERSION', '2.0.0');
-define('graphview_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('graphview_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('GRAPHVIEW_VERSION', '2.0.0');
+define('GRAPHVIEW_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('GRAPHVIEW_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 // Include core classes
-require_once graphview_PLUGIN_DIR . 'includes/class-graphview-databuilder.php';
-require_once graphview_PLUGIN_DIR . 'includes/class-graphview-rest.php';
-require_once graphview_PLUGIN_DIR . 'includes/class-graphview-adminpage.php';
+require_once GRAPHVIEW_PLUGIN_DIR . 'includes/class-graphview-databuilder.php';
+require_once GRAPHVIEW_PLUGIN_DIR . 'includes/class-graphview-rest.php';
+require_once GRAPHVIEW_PLUGIN_DIR . 'includes/class-graphview-adminpage.php';
 
 // Set default options on activation
 register_activation_hook(__FILE__, 'graphview_set_default_options');
@@ -109,9 +109,9 @@ function graphview_enqueue_admin_scripts()
         // Enqueue the compiled React admin script
         wp_enqueue_script(
             'graphview-admin-bundle',
-            graphview_PLUGIN_URL . 'build/admin.js',
-            array('wp-element', 'wp-components'),
-            graphview_VERSION,
+            GRAPHVIEW_PLUGIN_URL . 'build/admin.js',
+            array('wp-element'), // or empty array if not using WP's React
+            GRAPHVIEW_VERSION,
             true
         );
 
@@ -131,16 +131,19 @@ function graphview_enqueue_frontend_scripts()
 {
     $auto_insert = get_option('graphview_auto_insert', 'yes');
     if (($auto_insert === 'yes') && (is_single() || is_page())) {
-        // Register React and ReactDOM
-        wp_register_script('react', 'https://unpkg.com/react@18/umd/react.production.min.js', array(), '18.0.0', true);
-        wp_register_script('react-dom', 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js', array('react'), '18.0.0', true);
-
         // Enqueue the compiled React front-end script
         wp_enqueue_script(
             'graphview-frontend-bundle',
-            graphview_PLUGIN_URL . 'build/frontend.js',
-            array('react', 'react-dom', 'wp-components', 'wp-element'),
-            graphview_VERSION,
+            GRAPHVIEW_PLUGIN_URL . 'build/frontend.js',
+            array(
+                'react',
+                'react-dom',
+                'wp-components',
+                'wp-element',
+                'wp-primitives',
+                'wp-icons'
+            ),
+            GRAPHVIEW_VERSION,
             true
         );
 
@@ -208,7 +211,7 @@ function graphview_enqueue_gutenberg_scripts()
 {
     wp_enqueue_script(
         'graphview-gutenberg',
-        graphview_PLUGIN_URL . 'build/gutenberg.js',
+        GRAPHVIEW_PLUGIN_URL . 'build/gutenberg.js',
         array(
             'wp-plugins',
             'wp-edit-post',
@@ -219,7 +222,7 @@ function graphview_enqueue_gutenberg_scripts()
             'react',
             'react-dom'
         ),
-        graphview_VERSION,
+        GRAPHVIEW_VERSION,
         true
     );
 

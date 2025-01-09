@@ -39,12 +39,9 @@ module.exports = {
         '@wordpress/i18n': 'wp.i18n',
         '@wordpress/data': 'wp.data',
         '@wordpress/element': 'wp.element',
-        '@wordpress/icons': 'wp.icons',
-        '@wordpress/primitives': 'wp.primitives',
         react: 'React',
         'react-dom': 'ReactDOM',
-        '@wordpress/blocks': 'wp.blocks',
-        '@wordpress/compose': 'wp.compose',
-        '@wordpress/hooks': 'wp.hooks',
+        '@wordpress/icons': ['wp', 'icons'],
+        '@wordpress/primitives': ['wp', 'primitives']
     },
 };
