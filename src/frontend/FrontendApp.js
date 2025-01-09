@@ -9,7 +9,7 @@ import { rotateLeft, fullscreen, minimize } from '@wordpress/icons';
 function HoverInfo({ data, type }) {
     if (!data) return null;
 
-    const { themeColors } = window.myGraphViewData || {};
+    const { themeColors } = window.graphviewData || {};
     const primaryColor = themeColors?.primary || '#2271b1';
 
     const style = {
@@ -131,7 +131,7 @@ function FrontendApp() {
     const [cyInstance, setCyInstance] = useState(null);
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const { restUrl, currentPostId, themeColors } = window.myGraphViewData || {};
+    const { restUrl, currentPostId, themeColors } = window.graphviewData || {};
     const primaryColor = themeColors?.primary || '#2271b1';
     const secondaryColor = themeColors?.secondary || '#1d2327';
 

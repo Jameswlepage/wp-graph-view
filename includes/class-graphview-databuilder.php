@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class MyGraphView_DataBuilder
+class graphview_DataBuilder
 {
     /**
      * Build a global, full-site graph of all content.

@@ -13,7 +13,7 @@ function GraphPanel() {
     const postId = useSelect(select => select('core/editor').getCurrentPostId());
 
     // Theme colors passed via localized data
-    const { restUrl, nonce, themeColors } = window.myGraphViewData || {};
+    const { restUrl, nonce, themeColors } = window.graphviewData || {};
 
     // Fetch graph data when post ID changes
     useEffect(() => {

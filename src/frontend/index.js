@@ -4,7 +4,7 @@ import FrontendApp from './FrontendApp';
 
 // We'll dynamically insert a container in the content if auto-insert is enabled.
 // But let's also check if the container might exist. 
-const existingContainer = document.getElementById('mygraphview-frontend-root');
+const existingContainer = document.getElementById('graphview-frontend-root');
 
 const renderApp = (container) => {
     const root = createRoot(container);
@@ -18,7 +18,7 @@ if (existingContainer) {
     const contentAreas = document.querySelectorAll('.entry-content, .post-content, .entry, article');
     if (contentAreas.length > 0) {
         const container = document.createElement('div');
-        container.id = 'mygraphview-frontend-root';
+        container.id = 'graphview-frontend-root';
         contentAreas[0].appendChild(container);
         renderApp(container);
     }

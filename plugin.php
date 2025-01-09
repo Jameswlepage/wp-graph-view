@@ -14,90 +14,90 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('MYGRAPHVIEW_VERSION', '2.0.0');
-define('MYGRAPHVIEW_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('MYGRAPHVIEW_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('graphview_VERSION', '2.0.0');
+define('graphview_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('graphview_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 // Include core classes
-require_once MYGRAPHVIEW_PLUGIN_DIR . 'includes/class-mygraphview-databuilder.php';
-require_once MYGRAPHVIEW_PLUGIN_DIR . 'includes/class-mygraphview-rest.php';
-require_once MYGRAPHVIEW_PLUGIN_DIR . 'includes/class-mygraphview-adminpage.php';
+require_once graphview_PLUGIN_DIR . 'includes/class-graphview-databuilder.php';
+require_once graphview_PLUGIN_DIR . 'includes/class-graphview-rest.php';
+require_once graphview_PLUGIN_DIR . 'includes/class-graphview-adminpage.php';
 
 // Set default options on activation
-register_activation_hook(__FILE__, 'mygraphview_set_default_options');
-function mygraphview_set_default_options()
+register_activation_hook(__FILE__, 'graphview_set_default_options');
+function graphview_set_default_options()
 {
-    if (!get_option('mygraphview_auto_insert')) {
-        update_option('mygraphview_auto_insert', 'yes');
+    if (!get_option('graphview_auto_insert')) {
+        update_option('graphview_auto_insert', 'yes');
     }
-    if (!get_option('mygraphview_position')) {
-        update_option('mygraphview_position', 'below');
+    if (!get_option('graphview_position')) {
+        update_option('graphview_position', 'below');
     }
 }
 
 /**
  * Initialize the plugin
  */
-function mygraphview_init_plugin()
+function graphview_init_plugin()
 {
     // Register REST routes
-    add_action('rest_api_init', array('MyGraphView_REST', 'register_routes'));
+    add_action('rest_api_init', array('graphview_REST', 'register_routes'));
 
     // Enqueue our built React scripts in admin
-    add_action('admin_enqueue_scripts', 'mygraphview_enqueue_admin_scripts');
+    add_action('admin_enqueue_scripts', 'graphview_enqueue_admin_scripts');
 
     // Enqueue our built React scripts on the front end
-    add_action('wp_enqueue_scripts', 'mygraphview_enqueue_frontend_scripts');
+    add_action('wp_enqueue_scripts', 'graphview_enqueue_frontend_scripts');
 
     // Enqueue Gutenberg sidebar script
-    add_action('enqueue_block_editor_assets', 'mygraphview_enqueue_gutenberg_scripts');
+    add_action('enqueue_block_editor_assets', 'graphview_enqueue_gutenberg_scripts');
 
     // Add admin menu
-    add_action('admin_menu', 'mygraphview_register_admin_page');
+    add_action('admin_menu', 'graphview_register_admin_page');
 
     // Handle content insertion based on position setting
-    $auto_insert = get_option('mygraphview_auto_insert', 'yes');
+    $auto_insert = get_option('graphview_auto_insert', 'yes');
     if ($auto_insert === 'yes') {
-        $position = get_option('mygraphview_position', 'below');
+        $position = get_option('graphview_position', 'below');
         if ($position === 'above') {
-            add_filter('the_content', 'mygraphview_prepend_to_content', 5);
+            add_filter('the_content', 'graphview_prepend_to_content', 5);
         } else {
-            add_filter('the_content', 'mygraphview_append_to_content', 20);
+            add_filter('the_content', 'graphview_append_to_content', 20);
         }
     }
 }
-add_action('plugins_loaded', 'mygraphview_init_plugin');
+add_action('plugins_loaded', 'graphview_init_plugin');
 
 /**
  * Add graph above content
  */
-function mygraphview_prepend_to_content($content)
+function graphview_prepend_to_content($content)
 {
     if (!is_single() && !is_page()) {
         return $content;
     }
 
-    $graph_container = '<div id="mygraphview-frontend-root"></div>';
+    $graph_container = '<div id="graphview-frontend-root"></div>';
     return $graph_container . $content;
 }
 
 /**
  * Add graph below content
  */
-function mygraphview_append_to_content($content)
+function graphview_append_to_content($content)
 {
     if (!is_single() && !is_page()) {
         return $content;
     }
 
-    $graph_container = '<div id="mygraphview-frontend-root"></div>';
+    $graph_container = '<div id="graphview-frontend-root"></div>';
     return $content . $graph_container;
 }
 
 /**
  * Enqueue the admin bundle
  */
-function mygraphview_enqueue_admin_scripts()
+function graphview_enqueue_admin_scripts()
 {
     $screen = get_current_screen();
     if (!isset($screen->id)) {
@@ -108,18 +108,18 @@ function mygraphview_enqueue_admin_scripts()
     if ($screen->id === 'toplevel_page_graphview') {
         // Enqueue the compiled React admin script
         wp_enqueue_script(
-            'mygraphview-admin-bundle',
-            MYGRAPHVIEW_PLUGIN_URL . 'build/admin.js',
+            'graphview-admin-bundle',
+            graphview_PLUGIN_URL . 'build/admin.js',
             array('wp-element', 'wp-components'),
-            MYGRAPHVIEW_VERSION,
+            graphview_VERSION,
             true
         );
 
         // Provide REST URL, nonce, settings, etc. to the script
-        wp_localize_script('mygraphview-admin-bundle', 'myGraphViewAdminData', array(
-            'restUrl'        => esc_url_raw(rest_url('mygraphview/v1')),
+        wp_localize_script('graphview-admin-bundle', 'graphviewAdminData', array(
+            'restUrl'        => esc_url_raw(rest_url('graphview/v1')),
             'nonce'          => wp_create_nonce('wp_rest'),
-            'themeColors'    => mygraphview_get_theme_colors(),
+            'themeColors'    => graphview_get_theme_colors(),
         ));
     }
 }
@@ -127,9 +127,9 @@ function mygraphview_enqueue_admin_scripts()
 /**
  * Enqueue the frontend bundle
  */
-function mygraphview_enqueue_frontend_scripts()
+function graphview_enqueue_frontend_scripts()
 {
-    $auto_insert = get_option('mygraphview_auto_insert', 'yes');
+    $auto_insert = get_option('graphview_auto_insert', 'yes');
     if (($auto_insert === 'yes') && (is_single() || is_page())) {
         // Register React and ReactDOM
         wp_register_script('react', 'https://unpkg.com/react@18/umd/react.production.min.js', array(), '18.0.0', true);
@@ -137,10 +137,10 @@ function mygraphview_enqueue_frontend_scripts()
 
         // Enqueue the compiled React front-end script
         wp_enqueue_script(
-            'mygraphview-frontend-bundle',
-            MYGRAPHVIEW_PLUGIN_URL . 'build/frontend.js',
+            'graphview-frontend-bundle',
+            graphview_PLUGIN_URL . 'build/frontend.js',
             array('react', 'react-dom', 'wp-components', 'wp-element'),
-            MYGRAPHVIEW_VERSION,
+            graphview_VERSION,
             true
         );
 
@@ -149,11 +149,11 @@ function mygraphview_enqueue_frontend_scripts()
         $current_post_url = get_permalink($current_post_id);
 
         // Pass data
-        wp_localize_script('mygraphview-frontend-bundle', 'myGraphViewData', array(
-            'restUrl'       => esc_url_raw(rest_url('mygraphview/v1')),
+        wp_localize_script('graphview-frontend-bundle', 'graphviewData', array(
+            'restUrl'       => esc_url_raw(rest_url('graphview/v1')),
             'currentPostId' => $current_post_id ? $current_post_id : 0,
             'currentPostUrl' => $current_post_url,
-            'themeColors'   => mygraphview_get_theme_colors(),
+            'themeColors'   => graphview_get_theme_colors(),
         ));
     }
 }
@@ -161,7 +161,7 @@ function mygraphview_enqueue_frontend_scripts()
 /**
  * Basic function to pull theme colors
  */
-function mygraphview_get_theme_colors()
+function graphview_get_theme_colors()
 {
     // Fallback color set; adjust as desired
     $colors = array(
@@ -179,14 +179,14 @@ function mygraphview_get_theme_colors()
 /**
  * Register the Admin Menu
  */
-function mygraphview_register_admin_page()
+function graphview_register_admin_page()
 {
     add_menu_page(
         __('Graph View', 'my-graph-view'),
         __('Graph View', 'my-graph-view'),
         'manage_options',
         'graphview',
-        array('MyGraphView_AdminPage', 'render_graph'),
+        array('graphview_AdminPage', 'render_graph'),
         'dashicons-networking',
         90
     );
@@ -197,18 +197,18 @@ function mygraphview_register_admin_page()
         __('Settings', 'my-graph-view'),
         'manage_options',
         'graphview-settings',
-        array('MyGraphView_AdminPage', 'render_settings')
+        array('graphview_AdminPage', 'render_settings')
     );
 }
 
 /**
  * Enqueue the Gutenberg sidebar script
  */
-function mygraphview_enqueue_gutenberg_scripts()
+function graphview_enqueue_gutenberg_scripts()
 {
     wp_enqueue_script(
-        'mygraphview-gutenberg',
-        MYGRAPHVIEW_PLUGIN_URL . 'build/gutenberg.js',
+        'graphview-gutenberg',
+        graphview_PLUGIN_URL . 'build/gutenberg.js',
         array(
             'wp-plugins',
             'wp-edit-post',
@@ -219,14 +219,14 @@ function mygraphview_enqueue_gutenberg_scripts()
             'react',
             'react-dom'
         ),
-        MYGRAPHVIEW_VERSION,
+        graphview_VERSION,
         true
     );
 
     // Pass data to the script
-    wp_localize_script('mygraphview-gutenberg', 'myGraphViewData', array(
-        'restUrl'     => esc_url_raw(rest_url('mygraphview/v1')),
+    wp_localize_script('graphview-gutenberg', 'graphviewData', array(
+        'restUrl'     => esc_url_raw(rest_url('graphview/v1')),
         'nonce'       => wp_create_nonce('wp_rest'),
-        'themeColors' => mygraphview_get_theme_colors(),
+        'themeColors' => graphview_get_theme_colors(),
     ));
 }

@@ -54,7 +54,7 @@ function FilterBar({
     availablePostTypes,
     availableTaxonomies
 }) {
-    const { themeColors } = window.myGraphViewAdminData || {};
+    const { themeColors } = window.graphviewAdminData || {};
     const primaryColor = themeColors?.primary || '#2271b1';
 
     const filterBarStyle = {
@@ -232,7 +232,7 @@ function HoverInfo({ data, type }) {
     if (!data) return null;
 
     // Get theme colors with fallbacks
-    const { themeColors } = window.myGraphViewAdminData || {};
+    const { themeColors } = window.graphviewAdminData || {};
     const primaryColor = themeColors?.primary || '#2271b1'; // WP Admin blue
 
     // Function to decode HTML entities
@@ -339,7 +339,7 @@ function AdminApp() {
     const [allElements, setAllElements] = useState([]);
 
     // Theme colors passed via localized data
-    const { restUrl, nonce, themeColors } = window.myGraphViewAdminData || {};
+    const { restUrl, nonce, themeColors } = window.graphviewAdminData || {};
 
     // Debounced search term
     const debouncedSearchTerm = useMemo(() => {

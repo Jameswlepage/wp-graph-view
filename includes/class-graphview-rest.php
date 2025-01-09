@@ -3,12 +3,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class MyGraphView_REST
+class graphview_REST
 {
     public static function register_routes()
     {
         register_rest_route(
-            'mygraphview/v1',
+            'graphview/v1',
             '/full-graph',
             array(
                 'methods'  => 'GET',
@@ -20,7 +20,7 @@ class MyGraphView_REST
         );
 
         register_rest_route(
-            'mygraphview/v1',
+            'graphview/v1',
             '/local-graph/(?P<post_id>\d+)',
             array(
                 'methods'  => 'GET',
@@ -33,7 +33,7 @@ class MyGraphView_REST
     public static function handle_full_graph($request)
     {
         try {
-            $data = MyGraphView_DataBuilder::build_full_graph_data();
+            $data = graphview_DataBuilder::build_full_graph_data();
             return rest_ensure_response($data);
         } catch (Exception $e) {
             return new WP_Error('graph_error', $e->getMessage(), array('status' => 500));
@@ -46,7 +46,7 @@ class MyGraphView_REST
         $max_edges = intval($request->get_param('max_edges')) ?: 20;
 
         try {
-            $data = MyGraphView_DataBuilder::build_local_graph_data($post_id, $max_edges);
+            $data = graphview_DataBuilder::build_local_graph_data($post_id, $max_edges);
             return rest_ensure_response($data);
         } catch (Exception $e) {
             return new WP_Error('graph_error', $e->getMessage(), array('status' => 500));

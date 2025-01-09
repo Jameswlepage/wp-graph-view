@@ -33,7 +33,7 @@ class ErrorBoundary extends React.Component {
 }
 
 // This is the DOM node we created in `render_graph()`.
-const adminRoot = document.getElementById('mygraphview-admin-root');
+const adminRoot = document.getElementById('graphview-admin-root');
 
 if (adminRoot) {
     console.log('Found admin root, mounting React app...');
