@@ -32,7 +32,9 @@ class MyGraphView_DataBuilder
                 'data' => array(
                     'id'    => (string) $p->ID,
                     'label' => $p->post_title,
-                    'type'  => $p->post_type // e.g. post, page, etc.
+                    'type'  => $p->post_type,
+                    'excerpt' => wp_trim_words(get_the_excerpt($p), 20),
+                    'taxonomies' => self::get_post_taxonomies($p->ID)
                 )
             );
         }
@@ -298,5 +300,26 @@ class MyGraphView_DataBuilder
         }
 
         return $connected;
+    }
+
+    /**
+     * Get post taxonomies formatted for display
+     */
+    private static function get_post_taxonomies($post_id)
+    {
+        $taxonomies = get_object_taxonomies(get_post_type($post_id));
+        $tax_data = array();
+
+        foreach ($taxonomies as $taxonomy) {
+            $terms = get_the_terms($post_id, $taxonomy);
+            if ($terms && !is_wp_error($terms)) {
+                $tax_data[] = array(
+                    'taxonomy' => get_taxonomy($taxonomy)->labels->singular_name,
+                    'terms' => wp_list_pluck($terms, 'name')
+                );
+            }
+        }
+
+        return $tax_data;
     }
 }

@@ -104,8 +104,62 @@ function mygraphview_enqueue_front_end_scripts()
         wp_localize_script('mygraphview-frontend', 'myGraphViewData', array(
             'restUrl'        => esc_url_raw(rest_url('mygraphview/v1')),
             'currentPostId'  => get_the_ID() ? get_the_ID() : 0,
+            'themeColors'    => mygraphview_get_theme_colors()
         ));
     }
+}
+
+/**
+ * Get theme colors with fallbacks
+ */
+function mygraphview_get_theme_colors()
+{
+    $colors = array(
+        'primary' => '#9370DB',     // Default purple
+        'secondary' => '#444444',   // Default dark grey
+        'tertiary' => '#cccccc',    // Default light grey
+    );
+
+    // Try to get theme.json colors
+    $global_settings = wp_get_global_settings();
+    $color_palette = $global_settings['color']['palette'] ?? [];
+
+    if (!empty($color_palette)) {
+        // Look for specific colors by slug patterns
+        foreach ($color_palette as $color) {
+            // Skip if color doesn't have required keys
+            if (!isset($color['slug']) || !isset($color['color'])) {
+                continue;
+            }
+
+            $slug = $color['slug'];
+            // Primary color (for hover and highlights)
+            if (strpos($slug, 'primary') !== false || strpos($slug, 'main') !== false) {
+                $colors['primary'] = $color['color'];
+            }
+            // Secondary color (for nodes)
+            elseif (strpos($slug, 'secondary') !== false || strpos($slug, 'contrast') !== false) {
+                $colors['secondary'] = $color['color'];
+            }
+            // Tertiary color (for edges)
+            elseif (strpos($slug, 'tertiary') !== false || strpos($slug, 'muted') !== false) {
+                $colors['tertiary'] = $color['color'];
+            }
+        }
+
+        // If we didn't find specific matches, use the first few colors
+        if ($colors['primary'] === '#9370DB' && !empty($color_palette[0])) {
+            $colors['primary'] = $color_palette[0]['color'];
+        }
+        if ($colors['secondary'] === '#444444' && !empty($color_palette[1])) {
+            $colors['secondary'] = $color_palette[1]['color'];
+        }
+        if ($colors['tertiary'] === '#cccccc' && !empty($color_palette[2])) {
+            $colors['tertiary'] = $color_palette[2]['color'];
+        }
+    }
+
+    return $colors;
 }
 
 /**
@@ -165,6 +219,7 @@ function mygraphview_enqueue_admin_scripts()
         wp_localize_script('mygraphview-admin', 'myGraphViewAdminData', array(
             'restUrl' => esc_url_raw(rest_url('mygraphview/v1')),
             'nonce'   => wp_create_nonce('wp_rest'),
+            'themeColors' => mygraphview_get_theme_colors()
         ));
     }
 }
