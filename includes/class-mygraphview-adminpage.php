@@ -12,7 +12,11 @@ class MyGraphView_AdminPage
     {
 ?>
         <div class="wrap">
-            <div id="mygraphview-admin-root"></div>
+            <div id="mygraphview-admin-root" style="min-height: 400px; position: relative;">
+                <div style="text-align: center; padding-top: 100px;">
+                    Loading Graph View...
+                </div>
+            </div>
         </div>
     <?php
     }

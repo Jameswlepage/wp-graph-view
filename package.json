@@ -8,6 +8,12 @@
         "bundle": "npm run build && zip -r my-graph-view.zip build/* readme.txt my-graph-view.php"
     },
     "dependencies": {
+        "@wordpress/components": "^25.13.0",
+        "@wordpress/data": "^9.17.0",
+        "@wordpress/edit-post": "^7.24.0",
+        "@wordpress/element": "^5.24.0",
+        "@wordpress/i18n": "^4.47.0",
+        "@wordpress/plugins": "^6.15.0",
         "cytoscape": "^3.30.4",
         "cytoscape-cola": "^2.5.1",
         "react": "^18.2.0",

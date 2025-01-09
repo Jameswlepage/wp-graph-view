@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 
+// Import WordPress components properly
+import { Icon } from '@wordpress/components';
+import { rotateLeft, fullscreen, minimize } from '@wordpress/icons';
+
 // Simplified hover info component for frontend
 function HoverInfo({ data, type }) {
     if (!data) return null;
@@ -74,6 +78,50 @@ function HoverInfo({ data, type }) {
     return null;
 }
 
+// Control buttons component
+function ControlButtons({ onReset, onPopOut, isExpanded }) {
+    const buttonStyle = {
+        position: 'absolute',
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        width: '28px',
+        height: '28px',
+        padding: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    };
+
+    const iconStyle = {
+        width: '20px',
+        height: '20px',
+        display: 'block',
+    };
+
+    return (
+        <>
+            <button
+                style={{ ...buttonStyle, top: '10px', right: '44px' }}
+                onClick={onReset}
+                title="Reset View"
+            >
+                <Icon icon={rotateLeft} size={20} style={iconStyle} />
+            </button>
+            <button
+                style={{ ...buttonStyle, top: '10px', right: '10px' }}
+                onClick={onPopOut}
+                title={isExpanded ? "Close" : "Expand"}
+            >
+                <Icon icon={isExpanded ? minimize : fullscreen} size={20} style={iconStyle} />
+            </button>
+        </>
+    );
+}
+
 function FrontendApp() {
     const [elements, setElements] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -81,6 +129,7 @@ function FrontendApp() {
     const [hoverData, setHoverData] = useState(null);
     const [hoverType, setHoverType] = useState(null);
     const [cyInstance, setCyInstance] = useState(null);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const { restUrl, currentPostId, themeColors } = window.myGraphViewData || {};
     const primaryColor = themeColors?.primary || '#2271b1';
@@ -257,16 +306,52 @@ function FrontendApp() {
         },
     ], [primaryColor, secondaryColor]);
 
+    const handleReset = () => {
+        if (cyInstance) {
+            cyInstance.fit();
+            cyInstance.center();
+        }
+    };
+
+    const handlePopOut = () => {
+        setIsExpanded(!isExpanded);
+    };
+
     const containerStyle = {
         position: 'relative',
         width: '100%',
-        height: '300px',
+        height: isExpanded ? '80vh' : '300px',
         border: '1px solid #ccc',
         margin: '1em 0',
         backgroundColor: '#fff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+    };
+
+    const modalStyle = {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '90vw',
+        height: '80vh',
+        maxWidth: '1400px',
+        backgroundColor: 'white',
+        zIndex: 160000,
+        padding: '20px',
+        boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+        borderRadius: '4px',
+    };
+
+    const modalOverlayStyle = {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        zIndex: 159999,
     };
 
     const loadingStyle = {
@@ -290,8 +375,20 @@ function FrontendApp() {
         );
     }
 
-    return (
-        <div style={containerStyle}>
+    // Add a useEffect to handle layout recalculation when expanded
+    useEffect(() => {
+        if (isExpanded && cyInstance) {
+            // Small delay to ensure the modal is rendered
+            setTimeout(() => {
+                cyInstance.resize();
+                cyInstance.fit();
+                cyInstance.center();
+            }, 50);
+        }
+    }, [isExpanded, cyInstance]);
+
+    const graphContent = (
+        <>
             {loading && (
                 <div style={loadingStyle}>
                     Loading mini-graph...
@@ -300,6 +397,11 @@ function FrontendApp() {
             {!loading && elements.length >= 2 && (
                 <>
                     <HoverInfo data={hoverData} type={hoverType} />
+                    <ControlButtons
+                        onReset={handleReset}
+                        onPopOut={handlePopOut}
+                        isExpanded={isExpanded}
+                    />
                     <CytoscapeComponent
                         elements={elements}
                         stylesheet={stylesheet}
@@ -308,7 +410,6 @@ function FrontendApp() {
                         cy={(cy) => {
                             setCyInstance(cy);
 
-                            // Hover logic
                             cy.on('mouseover', 'node', (evt) => {
                                 const node = evt.target;
                                 setHoverData(node.data());
@@ -334,7 +435,6 @@ function FrontendApp() {
                                     .removeClass('hover');
                             });
 
-                            // Edge hover effects
                             cy.on('mouseover', 'edge', (evt) => {
                                 const edge = evt.target;
                                 setHoverData(edge.data());
@@ -356,7 +456,6 @@ function FrontendApp() {
                                     .removeClass('hover');
                             });
 
-                            // Click to navigate
                             cy.on('tap', 'node', (evt) => {
                                 const nodeData = evt.target.data();
                                 if (nodeData.id) {
@@ -367,6 +466,19 @@ function FrontendApp() {
                     />
                 </>
             )}
+        </>
+    );
+
+    return isExpanded ? (
+        <>
+            <div style={modalOverlayStyle} onClick={() => setIsExpanded(false)} />
+            <div style={modalStyle}>
+                {graphContent}
+            </div>
+        </>
+    ) : (
+        <div style={containerStyle}>
+            {graphContent}
         </div>
     );
 }

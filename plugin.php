@@ -1,11 +1,13 @@
 <?php
 
 /**
- * Plugin Name:       My Graph View
- * Description:       Visualize your WordPress content in a React-based Cytoscape.js graph.
+ * Plugin Name:       Graph View
+ * Description:       Visualize your WordPress content in a Graph View, similar to Obsidian. Support for Admin, Gutenberg, and Frontend.
  * Version:           2.0.0
- * Author:            Your Name
- * License:           GPL-2.0-or-later
+ * Author:            James LePage
+ * Author URI:        https://www.j.cv
+ * License:           GPL-2.0+
+ * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  */
 
 if (!defined('ABSPATH')) {
@@ -46,6 +48,9 @@ function mygraphview_init_plugin()
 
     // Enqueue our built React scripts on the front end
     add_action('wp_enqueue_scripts', 'mygraphview_enqueue_frontend_scripts');
+
+    // Enqueue Gutenberg sidebar script
+    add_action('enqueue_block_editor_assets', 'mygraphview_enqueue_gutenberg_scripts');
 
     // Add admin menu
     add_action('admin_menu', 'mygraphview_register_admin_page');
@@ -105,7 +110,7 @@ function mygraphview_enqueue_admin_scripts()
         wp_enqueue_script(
             'mygraphview-admin-bundle',
             MYGRAPHVIEW_PLUGIN_URL . 'build/admin.js',
-            array('wp-element'), // or empty array if not using WP's React
+            array('wp-element', 'wp-components'),
             MYGRAPHVIEW_VERSION,
             true
         );
@@ -126,11 +131,15 @@ function mygraphview_enqueue_frontend_scripts()
 {
     $auto_insert = get_option('mygraphview_auto_insert', 'yes');
     if (($auto_insert === 'yes') && (is_single() || is_page())) {
+        // Register React and ReactDOM
+        wp_register_script('react', 'https://unpkg.com/react@18/umd/react.production.min.js', array(), '18.0.0', true);
+        wp_register_script('react-dom', 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js', array('react'), '18.0.0', true);
+
         // Enqueue the compiled React front-end script
         wp_enqueue_script(
             'mygraphview-frontend-bundle',
             MYGRAPHVIEW_PLUGIN_URL . 'build/frontend.js',
-            array(),
+            array('react', 'react-dom', 'wp-components', 'wp-element'),
             MYGRAPHVIEW_VERSION,
             true
         );
@@ -190,4 +199,34 @@ function mygraphview_register_admin_page()
         'graphview-settings',
         array('MyGraphView_AdminPage', 'render_settings')
     );
+}
+
+/**
+ * Enqueue the Gutenberg sidebar script
+ */
+function mygraphview_enqueue_gutenberg_scripts()
+{
+    wp_enqueue_script(
+        'mygraphview-gutenberg',
+        MYGRAPHVIEW_PLUGIN_URL . 'build/gutenberg.js',
+        array(
+            'wp-plugins',
+            'wp-edit-post',
+            'wp-components',
+            'wp-i18n',
+            'wp-data',
+            'wp-element',
+            'react',
+            'react-dom'
+        ),
+        MYGRAPHVIEW_VERSION,
+        true
+    );
+
+    // Pass data to the script
+    wp_localize_script('mygraphview-gutenberg', 'myGraphViewData', array(
+        'restUrl'     => esc_url_raw(rest_url('mygraphview/v1')),
+        'nonce'       => wp_create_nonce('wp_rest'),
+        'themeColors' => mygraphview_get_theme_colors(),
+    ));
 }

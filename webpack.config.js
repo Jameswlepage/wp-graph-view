@@ -4,12 +4,13 @@ module.exports = {
     entry: {
         admin: './src/admin/index.js',
         frontend: './src/frontend/index.js',
+        gutenberg: './src/gutenberg/index.js',
     },
     output: {
         path: path.resolve(__dirname, 'build'),
         filename: '[name].js',
     },
-    devtool: 'source-map', // or 'none' for production
+    devtool: 'source-map',
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     module: {
         rules: [
@@ -31,10 +32,19 @@ module.exports = {
     resolve: {
         extensions: ['.js', '.jsx'],
     },
-    // If you want to externalize React & ReactDOM using WP's built-in React, 
-    // you can do so here, but be sure to adjust your code accordingly.
-    // externals: {
-    //   react: 'React',
-    //   'react-dom': 'ReactDOM',
-    // },
+    externals: {
+        '@wordpress/plugins': 'wp.plugins',
+        '@wordpress/edit-post': 'wp.editPost',
+        '@wordpress/components': 'wp.components',
+        '@wordpress/i18n': 'wp.i18n',
+        '@wordpress/data': 'wp.data',
+        '@wordpress/element': 'wp.element',
+        '@wordpress/icons': 'wp.icons',
+        '@wordpress/primitives': 'wp.primitives',
+        react: 'React',
+        'react-dom': 'ReactDOM',
+        '@wordpress/blocks': 'wp.blocks',
+        '@wordpress/compose': 'wp.compose',
+        '@wordpress/hooks': 'wp.hooks',
+    },
 };

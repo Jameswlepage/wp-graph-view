@@ -1,38 +1,43 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 import Select from 'react-select';
+import { Icon } from '@wordpress/components';
+import { rotateLeft } from '@wordpress/icons';
 
 // Reset View Button Component
 function ResetViewButton({ onClick }) {
-    const style = {
+    const buttonStyle = {
         position: 'absolute',
         top: '20px',
         right: '20px',
-        zIndex: 10,
-        padding: '8px',
         backgroundColor: 'white',
         border: '1px solid #ccc',
         borderRadius: '4px',
         cursor: 'pointer',
+        width: '28px',
+        height: '28px',
+        padding: 0,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: 10,
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     };
 
+    const iconStyle = {
+        width: '20px',
+        height: '20px',
+        display: 'block',
+    };
+
     return (
-        <div
-            style={style}
+        <button
+            style={buttonStyle}
             onClick={onClick}
             title="Reset View"
         >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 3H21V9" stroke="#1d2327" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M9 21H3V15" stroke="#1d2327" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M21 3L14 10" stroke="#1d2327" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M3 21L10 14" stroke="#1d2327" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-        </div>
+            <Icon icon={rotateLeft} size={20} style={iconStyle} />
+        </button>
     );
 }
 
@@ -606,12 +611,14 @@ function AdminApp() {
     useEffect(() => {
         function updateHeight() {
             const MIN_HEIGHT = 400; // Minimum height in pixels
-            const PADDING = 40; // Total vertical padding (20px top + 20px bottom)
-            const OPTIONS_HEIGHT = 200; // Approximate height for options section
+            const WP_ADMIN_BAR_HEIGHT = 32; // WordPress admin bar height
+            const PADDING = 80; // Total vertical padding
+            const OPTIONS_HEIGHT = 200; // Approximate height for filter options section
+            const BOTTOM_MARGIN = 54; // Extra margin at the bottom for breathing room
 
             // Calculate available height
             const viewportHeight = window.innerHeight;
-            const availableHeight = viewportHeight - PADDING - OPTIONS_HEIGHT;
+            const availableHeight = viewportHeight - WP_ADMIN_BAR_HEIGHT - PADDING - OPTIONS_HEIGHT - BOTTOM_MARGIN;
 
             // Set height respecting minimum
             setContainerHeight(Math.max(availableHeight, MIN_HEIGHT));
@@ -814,7 +821,7 @@ function AdminApp() {
                     color: '#1d2327',
                     fontWeight: 'normal',
                     margin: 0,
-                }}>Graph Options</h2>
+                }}>Graph View</h2>
                 <button
                     onClick={handleResetOptions}
                     style={{
