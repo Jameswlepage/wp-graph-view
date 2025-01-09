@@ -276,31 +276,54 @@ class MyGraphView_DataBuilder
         // Shared taxonomy
         $taxonomies = get_object_taxonomies($current_post->post_type);
         $current_post_terms = [];
+        $tax_queries = [];
+
         foreach ($taxonomies as $tax) {
             $terms = wp_get_post_terms($post_id, $tax);
-            foreach ($terms as $term) {
-                $current_post_terms[] = $term->term_id;
+            if (!empty($terms)) {
+                $term_ids = wp_list_pluck($terms, 'term_id');
+                if (!empty($term_ids)) {
+                    $tax_queries[] = [
+                        'taxonomy' => $tax,
+                        'field'    => 'term_id',
+                        'terms'    => $term_ids,
+                    ];
+                }
             }
         }
-        if (!empty($current_post_terms)) {
+
+        if (!empty($tax_queries)) {
             $related_posts = get_posts([
                 'post_type'      => $current_post->post_type,
                 'posts_per_page' => 10,
                 'post__not_in'   => [$post_id],
                 'tax_query' => [
-                    [
-                        'taxonomy' => $taxonomies,
-                        'field'    => 'term_id',
-                        'terms'    => $current_post_terms,
-                        'operator' => 'IN'
-                    ]
+                    'relation' => 'OR',
+                    ...$tax_queries
                 ]
             ]);
+
             foreach ($related_posts as $related) {
+                // Find which taxonomy terms are shared
+                $shared_tax_info = null;
+                foreach ($taxonomies as $tax) {
+                    $current_terms = wp_get_post_terms($post_id, $tax, ['fields' => 'names']);
+                    $related_terms = wp_get_post_terms($related->ID, $tax, ['fields' => 'names']);
+                    $shared_terms = array_intersect($current_terms, $related_terms);
+                    if (!empty($shared_terms)) {
+                        $shared_tax_info = [
+                            'taxonomy' => get_taxonomy($tax)->labels->singular_name,
+                            'terms' => array_values($shared_terms)
+                        ];
+                        break;
+                    }
+                }
+
                 $connected[] = [
                     'post'      => $related,
                     'type'      => 'shared_taxonomy',
-                    'direction' => 'outgoing'
+                    'direction' => 'outgoing',
+                    'shared_terms' => $shared_tax_info
                 ];
             }
         }

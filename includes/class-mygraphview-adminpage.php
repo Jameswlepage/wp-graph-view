@@ -19,7 +19,7 @@ class MyGraphView_AdminPage
     }
 
     /**
-     * Renders a simple settings page for “auto-insert” option
+     * Renders a simple settings page for "auto-insert" option
      */
     public static function render_settings()
     {
@@ -34,10 +34,14 @@ class MyGraphView_AdminPage
                 : 'no';
             update_option('mygraphview_auto_insert', $auto_insert);
 
+            $position = isset($_POST['mygraphview_position']) ? sanitize_text_field($_POST['mygraphview_position']) : 'below';
+            update_option('mygraphview_position', $position);
+
             echo '<div class="updated"><p>' . esc_html__('Settings saved.', 'my-graph-view') . '</p></div>';
         }
 
         $current_setting = get_option('mygraphview_auto_insert', 'yes');
+        $current_position = get_option('mygraphview_position', 'below');
     ?>
         <div class="wrap">
             <h1><?php esc_html_e('Graph Settings', 'my-graph-view'); ?></h1>
@@ -58,6 +62,23 @@ class MyGraphView_AdminPage
                                 id="mygraphview_auto_insert"
                                 value="yes"
                                 <?php checked($current_setting, 'yes'); ?> />
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">
+                            <label for="mygraphview_position">
+                                <?php esc_html_e('Graph Position:', 'my-graph-view'); ?>
+                            </label>
+                        </th>
+                        <td>
+                            <select name="mygraphview_position" id="mygraphview_position">
+                                <option value="above" <?php selected($current_position, 'above'); ?>>
+                                    <?php esc_html_e('Above Content', 'my-graph-view'); ?>
+                                </option>
+                                <option value="below" <?php selected($current_position, 'below'); ?>>
+                                    <?php esc_html_e('Below Content', 'my-graph-view'); ?>
+                                </option>
+                            </select>
                         </td>
                     </tr>
                 </table>

@@ -28,6 +28,9 @@ function mygraphview_set_default_options()
     if (!get_option('mygraphview_auto_insert')) {
         update_option('mygraphview_auto_insert', 'yes');
     }
+    if (!get_option('mygraphview_position')) {
+        update_option('mygraphview_position', 'below');
+    }
 }
 
 /**
@@ -46,8 +49,45 @@ function mygraphview_init_plugin()
 
     // Add admin menu
     add_action('admin_menu', 'mygraphview_register_admin_page');
+
+    // Handle content insertion based on position setting
+    $auto_insert = get_option('mygraphview_auto_insert', 'yes');
+    if ($auto_insert === 'yes') {
+        $position = get_option('mygraphview_position', 'below');
+        if ($position === 'above') {
+            add_filter('the_content', 'mygraphview_prepend_to_content', 5);
+        } else {
+            add_filter('the_content', 'mygraphview_append_to_content', 20);
+        }
+    }
 }
 add_action('plugins_loaded', 'mygraphview_init_plugin');
+
+/**
+ * Add graph above content
+ */
+function mygraphview_prepend_to_content($content)
+{
+    if (!is_single() && !is_page()) {
+        return $content;
+    }
+
+    $graph_container = '<div id="mygraphview-frontend-root"></div>';
+    return $graph_container . $content;
+}
+
+/**
+ * Add graph below content
+ */
+function mygraphview_append_to_content($content)
+{
+    if (!is_single() && !is_page()) {
+        return $content;
+    }
+
+    $graph_container = '<div id="mygraphview-frontend-root"></div>';
+    return $content . $graph_container;
+}
 
 /**
  * Enqueue the admin bundle
@@ -95,10 +135,15 @@ function mygraphview_enqueue_frontend_scripts()
             true
         );
 
+        // Get current post URL for comparison
+        $current_post_id = get_the_ID();
+        $current_post_url = get_permalink($current_post_id);
+
         // Pass data
         wp_localize_script('mygraphview-frontend-bundle', 'myGraphViewData', array(
             'restUrl'       => esc_url_raw(rest_url('mygraphview/v1')),
-            'currentPostId' => get_the_ID() ? get_the_ID() : 0,
+            'currentPostId' => $current_post_id ? $current_post_id : 0,
+            'currentPostUrl' => $current_post_url,
             'themeColors'   => mygraphview_get_theme_colors(),
         ));
     }
