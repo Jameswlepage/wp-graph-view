@@ -3,7 +3,7 @@ import CytoscapeComponent from 'react-cytoscapejs';
 
 // Import WordPress components properly
 import { Icon } from '@wordpress/components';
-import { rotateLeft, fullscreen, minimize } from '@wordpress/icons';
+import { rotateLeft, fullscreen, close } from '@wordpress/icons';
 
 // Simplified hover info component for frontend
 function HoverInfo({ data, type }) {
@@ -116,7 +116,7 @@ function ControlButtons({ onReset, onPopOut, isExpanded }) {
                 onClick={onPopOut}
                 title={isExpanded ? "Close" : "Expand"}
             >
-                <Icon icon={isExpanded ? minimize : fullscreen} size={20} style={iconStyle} />
+                <Icon icon={isExpanded ? close : fullscreen} size={20} style={iconStyle} />
             </button>
         </>
     );
