@@ -1,5 +1,225 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
+import Select from 'react-select';
+
+// Reset View Button Component
+function ResetViewButton({ onClick }) {
+    const style = {
+        position: 'absolute',
+        top: '20px',
+        right: '20px',
+        zIndex: 10,
+        padding: '8px',
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    };
+
+    return (
+        <div
+            style={style}
+            onClick={onClick}
+            title="Reset View"
+        >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 3H21V9" stroke="#1d2327" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9 21H3V15" stroke="#1d2327" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M21 3L14 10" stroke="#1d2327" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M3 21L10 14" stroke="#1d2327" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        </div>
+    );
+}
+
+// FilterBar component
+function FilterBar({
+    searchTerm,
+    onSearchChange,
+    visibleRelationships,
+    onRelationshipToggle,
+    visiblePostTypes,
+    onPostTypeToggle,
+    visibleTaxonomies,
+    onTaxonomyToggle,
+    availablePostTypes,
+    availableTaxonomies
+}) {
+    const { themeColors } = window.myGraphViewAdminData || {};
+    const primaryColor = themeColors?.primary || '#2271b1';
+
+    const filterBarStyle = {
+        padding: '15px',
+        marginTop: '20px',
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        width: '100%'
+    };
+
+    const filterLayoutStyle = {
+        display: 'flex',
+        gap: '20px',
+        alignItems: 'flex-start',
+        flexDirection: 'column'
+    };
+
+    const searchContainerStyle = {
+        width: '100%'
+    };
+
+    const selectorsContainerStyle = {
+        display: 'flex',
+        gap: '15px',
+        width: '100%'
+    };
+
+    const selectorStyle = {
+        flex: 1
+    };
+
+    const labelStyle = {
+        fontSize: '13px',
+        fontWeight: '500',
+        color: '#1d2327',
+        marginBottom: '4px'
+    };
+
+    const searchStyle = {
+        padding: '8px 12px',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        fontSize: '14px',
+        width: '100%'
+    };
+
+    // Convert arrays to react-select options
+    const relationshipOptions = [
+        { value: 'parent', label: 'Parent/Child' },
+        { value: 'internal_link', label: 'Internal Links' },
+        { value: 'shared_taxonomy', label: 'Shared Taxonomy' }
+    ];
+
+    const postTypeOptions = availablePostTypes.map(type => ({
+        value: type,
+        label: type.charAt(0).toUpperCase() + type.slice(1)
+    }));
+
+    const taxonomyOptions = availableTaxonomies.map(tax => ({
+        value: tax,
+        label: tax
+    }));
+
+    // Custom styles for react-select
+    const selectStyles = {
+        control: (base) => ({
+            ...base,
+            minHeight: '36px',
+            borderColor: '#ddd',
+            '&:hover': {
+                borderColor: primaryColor
+            }
+        }),
+        multiValue: (base) => ({
+            ...base,
+            backgroundColor: primaryColor + '1A', // 10% opacity
+        }),
+        multiValueLabel: (base) => ({
+            ...base,
+            color: primaryColor,
+            fontSize: '12px'
+        }),
+        multiValueRemove: (base) => ({
+            ...base,
+            color: primaryColor,
+            '&:hover': {
+                backgroundColor: primaryColor + '33', // 20% opacity
+                color: primaryColor
+            }
+        })
+    };
+
+    return (
+        <div style={filterBarStyle}>
+            <div style={filterLayoutStyle}>
+                <div style={searchContainerStyle}>
+                    <label style={labelStyle} htmlFor="post-search">Search Posts</label>
+                    <input
+                        id="post-search"
+                        type="text"
+                        placeholder="Search by title or content..."
+                        value={searchTerm}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        style={searchStyle}
+                    />
+                </div>
+
+                <div style={selectorsContainerStyle}>
+                    <div style={selectorStyle}>
+                        <label style={labelStyle}>Relationship Types</label>
+                        <Select
+                            isMulti
+                            name="relationships"
+                            options={relationshipOptions}
+                            value={relationshipOptions.filter(option =>
+                                visibleRelationships.includes(option.value)
+                            )}
+                            onChange={(selected) => {
+                                const values = selected ? selected.map(s => s.value) : [];
+                                onRelationshipToggle(values);
+                            }}
+                            placeholder="Select types..."
+                            styles={selectStyles}
+                            isClearable={true}
+                        />
+                    </div>
+
+                    <div style={selectorStyle}>
+                        <label style={labelStyle}>Post Types</label>
+                        <Select
+                            isMulti
+                            name="postTypes"
+                            options={postTypeOptions}
+                            value={postTypeOptions.filter(option =>
+                                visiblePostTypes.includes(option.value)
+                            )}
+                            onChange={(selected) => {
+                                const values = selected ? selected.map(s => s.value) : [];
+                                onPostTypeToggle(values);
+                            }}
+                            placeholder="Select types..."
+                            styles={selectStyles}
+                            isClearable={true}
+                        />
+                    </div>
+
+                    <div style={selectorStyle}>
+                        <label style={labelStyle}>Taxonomies</label>
+                        <Select
+                            isMulti
+                            name="taxonomies"
+                            options={taxonomyOptions}
+                            value={taxonomyOptions.filter(option =>
+                                visibleTaxonomies.includes(option.value)
+                            )}
+                            onChange={(selected) => {
+                                const values = selected ? selected.map(s => s.value) : [];
+                                onTaxonomyToggle(values);
+                            }}
+                            placeholder="Select taxonomies..."
+                            styles={selectStyles}
+                            isClearable={true}
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 // Hover info component
 function HoverInfo({ data, type }) {
@@ -103,8 +323,180 @@ function AdminApp() {
     const [hoverType, setHoverType] = useState(null);
     const [cyInstance, setCyInstance] = useState(null);
 
+    // Filter state
+    const [searchTerm, setSearchTerm] = useState('');
+    const [visibleRelationships, setVisibleRelationships] = useState(['parent', 'internal_link', 'shared_taxonomy']);
+    const [visiblePostTypes, setVisiblePostTypes] = useState([]);
+    const [visibleTaxonomies, setVisibleTaxonomies] = useState([]);
+    const [availablePostTypes, setAvailablePostTypes] = useState([]);
+    const [availableTaxonomies, setAvailableTaxonomies] = useState([]);
+    const [allElements, setAllElements] = useState([]);
+
     // Theme colors passed via localized data
     const { restUrl, nonce, themeColors } = window.myGraphViewAdminData || {};
+
+    // Debounced search term
+    const debouncedSearchTerm = useMemo(() => {
+        const timer = setTimeout(() => {
+            if (cyInstance) {
+                applyFilters();
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Filter handlers
+    const handleSearchChange = (value) => {
+        setSearchTerm(value);
+    };
+
+    const handleRelationshipToggle = (relationships) => {
+        setVisibleRelationships(relationships);
+    };
+
+    const handlePostTypeToggle = (postTypes) => {
+        setVisiblePostTypes(postTypes);
+    };
+
+    const handleTaxonomyToggle = (taxonomies) => {
+        setVisibleTaxonomies(taxonomies);
+    };
+
+    // Function to reset all filters
+    const handleResetOptions = useCallback(() => {
+        setSearchTerm('');
+        setVisibleRelationships(['parent', 'internal_link', 'shared_taxonomy']);
+        setVisiblePostTypes(availablePostTypes);
+        setVisibleTaxonomies(availableTaxonomies);
+
+        // Re-apply the layout after resetting
+        if (cyInstance && allElements.length > 0) {
+            setElements(allElements);
+            setTimeout(() => {
+                cyInstance.layout(layout).run();
+            }, 50);
+        }
+    }, [cyInstance, allElements, availablePostTypes, availableTaxonomies]);
+
+    // Modified applyFilters to preserve layout and relationships
+    const applyFilters = useCallback(() => {
+        if (!cyInstance || !allElements.length) return;
+
+        // First, determine which nodes should be visible
+        const visibleNodeIds = new Set();
+        const nodesToShow = allElements.filter(ele => {
+            if (!ele.data.source) { // It's a node
+                const matchesPostType = visiblePostTypes.length === 0 || visiblePostTypes.includes(ele.data.type);
+                const matchesSearch = !searchTerm || (
+                    (ele.data.label?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                    (ele.data.excerpt?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+                );
+
+                const shouldShow = matchesPostType && matchesSearch;
+                if (shouldShow) {
+                    visibleNodeIds.add(ele.data.id);
+                }
+                return shouldShow;
+            }
+            return false;
+        });
+
+        // Then, include edges between visible nodes that match relationship criteria
+        const edgesToShow = allElements.filter(ele => {
+            if (ele.data.source) { // It's an edge
+                const sourceVisible = visibleNodeIds.has(ele.data.source);
+                const targetVisible = visibleNodeIds.has(ele.data.target);
+                const relationshipVisible = visibleRelationships.includes(ele.data.relationship);
+
+                if (sourceVisible && targetVisible && relationshipVisible) {
+                    if (ele.data.relationship === 'shared_taxonomy' && ele.data.shared_terms) {
+                        return visibleTaxonomies.length === 0 ||
+                            visibleTaxonomies.includes(ele.data.shared_terms.taxonomy);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        // Combine nodes and edges while preserving positions
+        const filteredElements = [...nodesToShow, ...edgesToShow];
+
+        // Update elements while preserving positions
+        const existingPositions = {};
+        cyInstance.nodes().forEach(node => {
+            const pos = node.position();
+            existingPositions[node.id()] = pos;
+        });
+
+        setElements(filteredElements);
+
+        // After elements update, restore positions and run a modified layout
+        setTimeout(() => {
+            filteredElements.forEach(ele => {
+                if (!ele.data.source && existingPositions[ele.data.id]) {
+                    const node = cyInstance.getElementById(ele.data.id);
+                    if (node.length > 0) {
+                        node.position(existingPositions[ele.data.id]);
+                    }
+                }
+            });
+
+            // Only run layout if it's a fresh search/filter
+            if (searchTerm === '' && visiblePostTypes.length === availablePostTypes.length) {
+                cyInstance.layout(layout).run();
+            }
+        }, 50);
+
+    }, [cyInstance, allElements, searchTerm, visibleRelationships, visiblePostTypes, visibleTaxonomies, availablePostTypes]);
+
+    // Effect to apply filters when filter state changes
+    useEffect(() => {
+        applyFilters();
+    }, [searchTerm, visibleRelationships, visiblePostTypes, visibleTaxonomies]);
+
+    useEffect(() => {
+        async function fetchGraph() {
+            try {
+                if (!restUrl) {
+                    throw new Error('REST URL not provided.');
+                }
+                const res = await fetch(`${restUrl}/full-graph`, {
+                    headers: { 'X-WP-Nonce': nonce },
+                });
+                if (!res.ok) {
+                    throw new Error('Failed to fetch the full-graph data.');
+                }
+                const data = await res.json();
+                if (!data.nodes || !data.edges) {
+                    throw new Error('Invalid graph data format');
+                }
+
+                // Extract available post types and taxonomies
+                const postTypes = [...new Set(data.nodes.map(node => node.data.type))];
+                const taxonomies = [...new Set(data.nodes
+                    .flatMap(node => node.data.taxonomies || [])
+                    .map(tax => tax.taxonomy)
+                )];
+
+                setAvailablePostTypes(postTypes);
+                setAvailableTaxonomies(taxonomies);
+                setVisiblePostTypes(postTypes); // Show all post types by default
+                setVisibleTaxonomies(taxonomies); // Show all taxonomies by default
+
+                const allElements = [...data.nodes, ...data.edges];
+                setAllElements(allElements);
+                setElements(allElements);
+                setLoading(false);
+            } catch (err) {
+                console.error('Graph loading error:', err);
+                setError(err.message);
+                setLoading(false);
+            }
+        }
+
+        fetchGraph();
+    }, [restUrl, nonce]);
 
     // Memoize the stylesheet
     const stylesheet = useMemo(() => {
@@ -182,7 +574,7 @@ function AdminApp() {
         ];
     }, [themeColors]);
 
-    // Memoize the layout config
+    // Memoize the layout config but remove the key dependency
     const layout = useMemo(() => ({
         name: 'cose',
         animate: true,
@@ -203,11 +595,15 @@ function AdminApp() {
         nodeDimensionsIncludeLabels: true,
         refresh: 20,
         animationDuration: 1000,
-        maxSimulationTime: 4000,
-        stop: function () {
-            console.log('Initial layout complete');
+        maxSimulationTime: 4000
+    }), []); // Remove dependency on elements.length
+
+    // Add effect to handle layout updates
+    useEffect(() => {
+        if (cyInstance && elements.length > 0) {
+            cyInstance.layout(layout).run();
         }
-    }), []);
+    }, [elements, cyInstance]);
 
     // Add effect for initial zoom fitting
     useEffect(() => {
@@ -303,37 +699,32 @@ function AdminApp() {
         };
     }, [cyInstance, handleNodeHover, handleNodeMouseOut, handleEdgeHover]);
 
-    useEffect(() => {
-        async function fetchGraph() {
-            try {
-                if (!restUrl) {
-                    throw new Error('REST URL not provided.');
-                }
-                const res = await fetch(`${restUrl}/full-graph`, {
-                    headers: { 'X-WP-Nonce': nonce },
-                });
-                if (!res.ok) {
-                    throw new Error('Failed to fetch the full-graph data.');
-                }
-                const data = await res.json();
-                if (!data.nodes || !data.edges) {
-                    throw new Error('Invalid graph data format');
-                }
-                const allElements = [
-                    ...data.nodes,
-                    ...data.edges,
-                ];
-                setElements(allElements);
-                setLoading(false);
-            } catch (err) {
-                console.error('Graph loading error:', err);
-                setError(err.message);
-                setLoading(false);
-            }
-        }
+    // Function to reset view
+    const handleResetView = useCallback(() => {
+        if (!cyInstance) return;
 
-        fetchGraph();
-    }, [restUrl, nonce]);
+        const padding = 50;
+        cyInstance.fit({
+            padding: padding,
+            eles: cyInstance.elements(),
+        });
+
+        const graphBounds = cyInstance.elements().boundingBox();
+        const containerWidth = cyInstance.width();
+        const containerHeight = cyInstance.height();
+
+        const widthRatio = (containerWidth - 2 * padding) / graphBounds.w;
+        const heightRatio = (containerHeight - 2 * padding) / graphBounds.h;
+        const zoomFactor = Math.min(widthRatio, heightRatio);
+
+        cyInstance.zoom({
+            level: zoomFactor,
+            renderedPosition: {
+                x: containerWidth / 2,
+                y: containerHeight / 2
+            }
+        });
+    }, [cyInstance]);
 
     const containerStyle = {
         width: '100%',
@@ -385,29 +776,71 @@ function AdminApp() {
     }
 
     return (
-        <div style={containerStyle}>
-            <div style={graphContainerStyle}>
-                {loading ? (
-                    <div style={loadingOverlayStyle}>
-                        <span className="spinner is-active" style={{ float: 'none' }}></span>
-                        <div style={loadingTextStyle}>Loading Graph Data</div>
-                    </div>
-                ) : (
-                    <>
-                        <HoverInfo data={hoverData} type={hoverType} />
-                        <CytoscapeComponent
-                            key={elements.length > 0 ? 'loaded' : 'loading'}
-                            elements={elements}
-                            stylesheet={stylesheet}
-                            layout={layout}
-                            style={{ width: '100%', height: '100%' }}
-                            cy={(cy) => {
-                                setCyInstance(cy);
-                            }}
-                        />
-                    </>
-                )}
+        <div style={{ padding: '20px' }}>
+            <div style={containerStyle}>
+                <div style={graphContainerStyle}>
+                    {loading ? (
+                        <div style={loadingOverlayStyle}>
+                            <span className="spinner is-active" style={{ float: 'none' }}></span>
+                            <div style={loadingTextStyle}>Loading Graph Data</div>
+                        </div>
+                    ) : (
+                        <>
+                            <ResetViewButton onClick={handleResetView} />
+                            <HoverInfo data={hoverData} type={hoverType} />
+                            <CytoscapeComponent
+                                elements={elements}
+                                stylesheet={stylesheet}
+                                layout={layout}
+                                style={{ width: '100%', height: '100%' }}
+                                cy={(cy) => {
+                                    setCyInstance(cy);
+                                }}
+                            />
+                        </>
+                    )}
+                </div>
             </div>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px',
+                marginTop: '20px',
+                marginBottom: '15px'
+            }}>
+                <h2 style={{
+                    fontSize: '1.3em',
+                    color: '#1d2327',
+                    fontWeight: 'normal',
+                    margin: 0
+                }}>Graph Options</h2>
+                <button
+                    onClick={handleResetOptions}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2271b1',
+                        cursor: 'pointer',
+                        padding: 0,
+                        fontSize: '13px',
+                        textDecoration: 'underline'
+                    }}
+                >
+                    Reset Options
+                </button>
+            </div>
+            <FilterBar
+                searchTerm={searchTerm}
+                onSearchChange={handleSearchChange}
+                visibleRelationships={visibleRelationships}
+                onRelationshipToggle={handleRelationshipToggle}
+                visiblePostTypes={visiblePostTypes}
+                onPostTypeToggle={handlePostTypeToggle}
+                visibleTaxonomies={visibleTaxonomies}
+                onTaxonomyToggle={handleTaxonomyToggle}
+                availablePostTypes={availablePostTypes}
+                availableTaxonomies={availableTaxonomies}
+            />
         </div>
     );
 }

@@ -12,7 +12,8 @@
         "cytoscape-cola": "^2.5.1",
         "react": "^18.2.0",
         "react-cytoscapejs": "^2.0.0",
-        "react-dom": "^18.2.0"
+        "react-dom": "^18.2.0",
+        "react-select": "^5.9.0"
     },
     "devDependencies": {
         "@babel/core": "^7.20.0",
